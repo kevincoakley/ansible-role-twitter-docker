@@ -1,2 +1,18 @@
 ---
-# defaults file for ansible-role-twitter-docker
+twitter_stream_archive_user: twitter-stream-archive
+twitter_stream_archive_group: twitter-stream-archive
+twitter_stream_archive_root_directory: /opt/twitter-stream-archive
+twitter_stream_archive_docker_image: ghcr.io/kevincoakley/twitter-stream-archive:1.0.0
+twitter_consumer_token:
+twitter_consumer_token_secret:
+twitter_access_token:
+twitter_access_token_secret:
+twitter_stream_track:
+twitter_stream_locations:
+swift_archive_docker_image: ghcr.io/kevincoakley/swift-archive:1.0.2
+os_username:
+os_password:
+os_project_name:
+os_auth_url:
+swift_container:
+swift_local_delete: "True"

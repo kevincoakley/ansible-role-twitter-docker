@@ -1,0 +1,22 @@
+---
+version: '3'
+services:
+  twitter-stream-archive:
+    image: {{ twitter_stream_archive_docker_image }}
+    restart: always
+    ports:
+      - 8000:8000
+    volumes:
+      - {{ twitter_stream_archive_root_directory }}/tweets/:/twitter-stream-archive/
+    environment:
+      - CONSUMER_TOKEN={{ twitter_consumer_token }}
+      - CONSUMER_TOKEN_SECRET={{ twitter_consumer_token_secret }}
+      - ACCESS_TOKEN={{ twitter_access_token }}
+      - ACCESS_TOKEN_SECRET={{ twitter_access_token_secret }}
+      - ARCHIVE_PATH=/twitter-stream-archive
+{% if twitter_stream_track is defined and twitter_stream_track is not none %}
+      - STREAM_TRACK={{ twitter_stream_track }}
+{% endif %}
+{% if twitter_stream_locations is defined and twitter_stream_locations is not none %}
+      - STREAM_LOCATIONS={{ twitter_stream_locations }}
+{% endif %}

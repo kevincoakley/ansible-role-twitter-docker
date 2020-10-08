@@ -1,2 +1,17 @@
 ---
-# handlers file for ansible-role-twitter-docker
+- name: Run docker-compose down
+  docker_compose:
+    project_src: "{{ twitter_stream_archive_root_directory }}/docker-compose/"
+    state: absent
+  listen: "update docker-compose"
+
+- name: Run docker-compose up
+  docker_compose:
+    project_src: "{{ twitter_stream_archive_root_directory }}/docker-compose/"
+    state: present
+  listen: "update docker-compose"
+
+- name: Give the docker-compose containers time to start
+  pause:
+    seconds: 120
+  listen: "update docker-compose"

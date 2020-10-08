@@ -1,2 +1,65 @@
 ---
-# tasks file for ansible-role-twitter-docker
+- name: Include OS specific tasks
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: Ensure group TwitterStreamArchive exists
+  group:
+    name: "{{ twitter_stream_archive_group }}"
+    state: present
+
+- name: Ensure user TwitterStreamArchive exists
+  user:
+    name: "{{ twitter_stream_archive_user }}"
+    group: "{{ twitter_stream_archive_group }}"
+    comment: TwitterStreamArchive
+    state: present
+
+- name: Ensure twitter_stream_archive_root_directory directory exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ twitter_stream_archive_user }}"
+    group: "{{ twitter_stream_archive_group }}"
+    mode: '0755'
+  with_items:
+    - "{{ twitter_stream_archive_root_directory }}/"
+
+- name: Ensure twitter_stream_archive_root_directory additional directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ twitter_stream_archive_user }}"
+    group: "{{ twitter_stream_archive_group }}"
+    mode: '0777'
+  with_items:
+    - "{{ twitter_stream_archive_root_directory }}/docker-compose/"
+    - "{{ twitter_stream_archive_root_directory }}/tweets/"
+
+- name: Copy the TwitterStreamArchive template files
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ twitter_stream_archive_root_directory }}/{{ item }}"
+    owner: "{{ twitter_stream_archive_user }}"
+    group: "{{ twitter_stream_archive_group }}"
+    mode: '0644'
+  with_items:
+    - docker-compose/docker-compose.yml
+  notify: "update docker-compose"
+
+- name: Give the twitter_stream_archive_user user sudo access to docker
+  lineinfile:
+    path: "/etc/sudoers.d/{{ twitter_stream_archive_user }}"
+    create: true
+    state: present
+    line: "{{ twitter_stream_archive_user }} ALL=(ALL) NOPASSWD:/usr/bin/docker"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Create cron job to archive the tweets to Swift every hour
+  cron:
+    name: "check dirs"
+    minute: "15"
+    job: "sudo /usr/bin/docker run --name swift-archive --rm -e OS_USERNAME='{{ os_username }}' -e OS_PASSWORD='{{ os_password }}' -e OS_PROJECT_NAME='{{ os_project_name }}' -e OS_AUTH_URL='{{ os_auth_url }}'  -e CONTAINER='{{ swift_container }}' -e ARCHIVE_PATH='/twitter-stream-archive/' -e LOCAL_DELETE={{ swift_local_delete }} -e SECONDS_SINCE_UPDATED='600' -v '{{ twitter_stream_archive_root_directory }}/tweets/:/twitter-stream-archive/' {{ swift_archive_docker_image }}"
+    user: "{{ twitter_stream_archive_user }}"
+
+- name: Restart docker-compose if needed
+  meta: flush_handlers
